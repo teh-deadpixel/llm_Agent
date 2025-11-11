@@ -18,15 +18,21 @@ def main():
         print("Missing api key")
         sys.exit(1)
     client = genai.Client(api_key = api_key)
+    verbose = "--verbose" in sys.argv
     prompt = sys.argv[1]
     messages = [types.Content(role="user", parts=[types.Part(text=prompt)]),]
+    if verbose :
+        print(f"User prompt: {prompt}")
     try:
         response = client.models.generate_content(
             model="gemini-2.0-flash-001",
             contents=messages,
         )
         print(response.text)
-        if hasattr(response, "usage_metadata") and response.usage_metadata:
+        
+            
+        if verbose and hasattr(response, "usage_metadata") and response.usage_metadata:
+            
             print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
             print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
     except genai.errors.AuthenticationError as e:
