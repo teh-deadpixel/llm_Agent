@@ -32,17 +32,67 @@ def main():
         },
     ),
 )
+    schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="Read file content in the specified directory, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="Path to the file to read from, relative to the working directory.",
+            ),
+        },
+    ),
+)
+    schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Execute Python files with optional arguments, constrained to the working directory",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "working_directory": types.Schema(
+                type=types.Type.STRING,
+                description="Path to the Python file to execute, relative to the working directory. The file may receive optional arguments.",
+            ),
+        },
+    ),
+)   
+    schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="Write or overwrite files in the specified file_path, constrained to the working file_path.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="Path to the file to Write or overwrite files, constrained to the working directory.",
+            ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="Text content to write to the file. Existing contents will be overwritten.",
+            ),
+        },
+    ),
+)   
     available_functions = types.Tool(
     function_declarations=[
         schema_get_files_info,
+        schema_get_file_content,
+        schema_run_python_file,
+        schema_write_file
     ]
 )
     system_prompt = """
 You are a helpful AI coding agent.
-
-When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
+When a user asks a question or makes a request, you must decide whether any of the available operations are needed. 
+If the user asks you to list, read, run, or write files, you must respond by selecting and calling the appropriate function instead of answering directly in text.
+When a user asks a question or makes a request, make a function call plan. You will perform the following operations:
 
 - List files and directories
+- Read file contents
+- Execute Python files with optional arguments
+- Write or overwrite files
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 """
