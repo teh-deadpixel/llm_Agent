@@ -16,17 +16,24 @@ def run_python_file(working_directory, file_path, args=[]):
         running = subprocess.run(["python", abs_target, *args], cwd =abs_working, capture_output=True, text=True, timeout=30)
         stdout_text = running.stdout or ""
         error_text = running.stderr or ""
+        combined = ""
+        if stdout_text:
+            combined += stdout_text
+        if error_text:
+            combined += error_text
 
         output = []
-        output.append(f"STDOUT: {stdout_text}".rstrip())
-        output.append(f"STDOUT: {error_text}".rstrip())
+        if combined:
+            output.append(f"STDOUT:\n{combined}".rstrip())
+
         if running.returncode != 0:
             output.append(f"Process exited with code {running.returncode}")
 
         result = "\n".join(output).strip()
 
-        if not stdout_text and not error_text and running.returncode == 0:
+        if not combined and running.returncode == 0:
             return "No output produced."
+
         return result
     except Exception as e:
         return f"Error: executing Python file: {e}"

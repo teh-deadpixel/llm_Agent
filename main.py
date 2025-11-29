@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 import sys
+from call_function import call_function
+
 
 def main():
 
@@ -47,17 +49,26 @@ def main():
 )
     schema_run_python_file = types.FunctionDeclaration(
     name="run_python_file",
-    description="Execute Python files with optional arguments, constrained to the working directory",
+    description="Executes a Python file within the working directory and returns the output from the interpreter.",
     parameters=types.Schema(
         type=types.Type.OBJECT,
         properties={
-            "working_directory": types.Schema(
+            "file_path": types.Schema(
                 type=types.Type.STRING,
-                description="Path to the Python file to execute, relative to the working directory. The file may receive optional arguments.",
+                description="Path to the Python file to execute, relative to the working directory.",
+            ),
+            "args": types.Schema(
+                type=types.Type.ARRAY,
+                items=types.Schema(
+                    type=types.Type.STRING,
+                    description="Optional arguments to pass to the Python file.",
+                ),
+                description="Optional arguments to pass to the Python file.",
             ),
         },
+        required=["file_path"],
     ),
-)   
+)
     schema_write_file = types.FunctionDeclaration(
     name="write_file",
     description="Write or overwrite files in the specified file_path, constrained to the working file_path.",
@@ -110,19 +121,25 @@ All paths you provide should be relative to the working directory. You do not ne
         if response.function_calls == None:
             print(response.text)
         else:
+            func_response = []
             for function_call_part in response.function_calls:
-                print(f"Calling function: {function_call_part.name}({function_call_part.args})")
-            
+                func_call_result = call_function(function_call_part, verbose)
+                if not hasattr(func_call_result, "parts") or not hasattr(func_call_result.parts[0].function_response, "response"):
+                    raise Exception("ERROR: empty call")
+                func_response.append(func_call_result.parts[0])
+                #print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+                if verbose:
+                     print(f"-> {func_call_result.parts[0].function_response.response}")
         if verbose and hasattr(response, "usage_metadata") and response.usage_metadata:
             
             print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
             print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
-    except genai.errors.AuthenticationError as e:
-        print(f"Auth error: {e}. Check GEMINI_API_KEY.")
-        sys.exit(1)
-    except genai.errors.InvalidArgument as e:
-        print(f"Invalid request: {e}")
-        sys.exit(1)
+    # except genai.errors.AuthenticationError as e:
+    #     print(f"Auth error: {e}. Check GEMINI_API_KEY.")
+    #     sys.exit(1)
+    # except genai.errors.InvalidArgument as e:
+    #     print(f"Invalid request: {e}")
+    #     sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}")
         sys.exit(1)
