@@ -23,7 +23,7 @@ class Calculator:
         values = []
         operators = []
 
-        for token in tokens:
+        for i, token in enumerate(tokens):
             if token in self.operators:
                 while (
                     operators
@@ -34,7 +34,8 @@ class Calculator:
                 operators.append(token)
             else:
                 try:
-                    values.append(float(token))
+                    num = float(token)
+                    values.append(num)
                 except ValueError:
                     raise ValueError(f"invalid token: {token}")
 
